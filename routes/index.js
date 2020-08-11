@@ -17,7 +17,7 @@ router.get('/air-pak/:city/:lat/:long', function(req, res) {
     currentTemperature: null,
     minTemperature: null,
     maxTemperature: null,
-    airQuality: 200
+    airQuality: "200"
   };
   //method returns a promise that resolves after all of the given promises have either fulfilled or rejected
   Promise.allSettled([

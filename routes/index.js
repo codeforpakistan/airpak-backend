@@ -40,11 +40,11 @@ router.get('/air-pak/:city/:lat/:long', function(req, res) {
         }
       }
     }
-    res.status(200).send({msg: payload})
+    res.status(200).send(payload)
   })
   .catch(err => {
     console.error(err); 
-    res.status(500).send({msg: err});
+    res.status(500).json(err);
   })
 });
 

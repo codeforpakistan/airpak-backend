@@ -12,7 +12,12 @@ router.get('/air-pak/:city/:lat/:long', function(req, res) {
     res.status(404).send({'msg': 'Please provide the city name'});
   }
   const payload = {
-    totalPollenCount: null
+    totalPollenCount: null,
+    temperature: {},
+    currentTemperature: null,
+    minTemperature: null,
+    maxTemperature: null,
+    airQuality: 200
   };
   //method returns a promise that resolves after all of the given promises have either fulfilled or rejected
   Promise.allSettled([
@@ -28,6 +33,11 @@ router.get('/air-pak/:city/:lat/:long', function(req, res) {
       if(results[1] && results[1].value && results[1].status === 'fulfilled') {
         const weatherRequest = results[1].value.data;
         payload.temprature = weatherRequest ? weatherRequest.main : {};
+        if(payload.temprature) {
+          payload.currentTemperature = payload.temprature.temp;
+          payload.minTemperature = payload.temprature.temp_min;
+          payload.maxTemperature = payload.temprature.temp_max;
+        }
       }
     }
     res.status(200).send({msg: payload})

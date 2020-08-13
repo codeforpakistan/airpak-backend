@@ -8,13 +8,13 @@ router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
-router.get('/air-pak/:city/:lat/:long', async function (req, res) {
+router.get('/air-pak/:city/:lat/:lon', async function (req, res) {
   if (!req.params.city) {
     res.status(404).send({ 'msg': 'Please provide the city name' });
   }
   const cityName = req.params.city.toLowerCase();
   //get all city info along with lat, long and ids
-  const cityInfo = helperService.getCityIdByName(cityName);
+  let cityInfo = helperService.getCityIdByName(cityName);
   // in case we don't have city information in json list
   if(!cityInfo) {
     cityInfo = {
@@ -22,7 +22,10 @@ router.get('/air-pak/:city/:lat/:long', async function (req, res) {
       name: cityName,
       state: '',
       country: '',
-      coord: {}
+      coord: {
+        lat: req.params.lat,
+        lon: req.params.lon
+      }
     }
   };
   //ip from which we get the request
@@ -60,17 +63,19 @@ function getData(data) {
     Promise.allSettled([
       axios.get('http://ec2-3-23-111-60.us-east-2.compute.amazonaws.com:5000/pollendetails/' + data.name),
       data.id 
-      ? axios.get('http://api.openweathermap.org/data/2.5/weather?id=' + data.id + '&units=metric&APPID=624b9990964f6e8bc6fb390a87172ce3') 
-      : axios.get('http://api.openweathermap.org/data/2.5/weather?q=' + data.city.toLowerCase() + '&units=metric&APPID=624b9990964f6e8bc6fb390a87172ce3'),
+       ? axios.get('http://api.openweathermap.org/data/2.5/weather?id=' + data.id + '&units=metric&APPID=624b9990964f6e8bc6fb390a87172ce3')
+       : data.coord && data.coord.lat 
+       ? axios.get('http://api.openweathermap.org/data/2.5/weather?lat=' + data.coord.lon + '&lon=' + data.coord.lon  + '&units=metric&APPID=624b9990964f6e8bc6fb390a87172ce3')
+       : axios.get('http://api.openweathermap.org/data/2.5/weather?q=' + data.city.toLowerCase() + '&units=metric&APPID=624b9990964f6e8bc6fb390a87172ce3'),
       data.coord && data.coord.lat 
       ? axios.get('http://api.airvisual.com/v2/nearest_city?lat=' + data.coord.lat + '&lon='+ data.coord.lon + '&key=dd32c20f-28a1-409c-9023-52eac0fcde2d') 
-      : axios.get('http://api.airvisual.com/v2/nearest_city?lat=' + data.coord.lat + '&lon='+ data.coord.lon + '&key=dd32c20f-28a1-409c-9023-52eac0fcde2d', {
+      : axios.get('http://api.airvisual.com/v2/nearest_city?lat=&key=dd32c20f-28a1-409c-9023-52eac0fcde2d', {
         headers: {
           'x-forwarded-for': data.ip
         }
       })
     ]).
-      then((results) => {
+      then(async (results) => {
         if (results && results.length > 0) {
           //pollen count
           const cityData = results[0]?.value?.data?.Islamabad;
@@ -80,7 +85,6 @@ function getData(data) {
           payload.currentTemperature = payload.temperature?.temp;
           payload.minTemperature = payload.temperature?.temp_min;
           payload.maxTemperature = payload.temperature?.temp_max;
-          
           //airVisual aqius
           payload.airQuality = results[2]?.value?.data;
           payload.aqius = payload.airQuality?.data?.current?.pollution?.aqius

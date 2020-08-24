@@ -12,9 +12,20 @@ router.get('/air-pak/:city/:lat/:lon', async function (req, res) {
   if (!req.params.city) {
     res.status(404).send({ 'msg': 'Please provide the city name' });
   }
-  const cityName = req.params.city.toLowerCase();
-  //get all city info along with lat, long and ids
-  let cityInfo = helperService.getCityIdByName(cityName);
+  let cityInfo = null;
+  let cityName = req.params.city.toLowerCase();
+  if(req.params.lat && req.params.lon) {
+    cityInfo = helperService.getCityNameByLatLon(req.params.lat,req.params.lon);
+    if(cityInfo) {
+     cityInfo.name = cityInfo.name.toLowerCase();
+     cityName = cityInfo.name;
+     console.info('found city name against lat lon', cityName);
+    }
+  } else {
+    //get all city info along with lat, long and ids
+    cityInfo = helperService.getCityIdByName(cityName);
+    cityInfo.name = cityInfo.name.toLowerCase();
+  }
   // in case we don't have city information in json list
   if(!cityInfo) {
     cityInfo = {
@@ -32,7 +43,7 @@ router.get('/air-pak/:city/:lat/:lon', async function (req, res) {
   cityInfo.ip = req.connection.remoteAddress;
   let cacheResult = {};
   cacheResult = ls.get('payload' + cityName);
-  if (cacheResult && cacheResult.totalPollenCount) {
+  if (cacheResult && cacheResult.currentTemperature) {
     console.log('data from cache')
     return res.status(200).send(cacheResult);
   }
@@ -66,7 +77,7 @@ function getData(data) {
        ? axios.get('http://api.openweathermap.org/data/2.5/weather?id=' + data.id + '&units=metric&APPID=624b9990964f6e8bc6fb390a87172ce3')
        : data.coord && data.coord.lat 
        ? axios.get('http://api.openweathermap.org/data/2.5/weather?lat=' + data.coord.lon + '&lon=' + data.coord.lon  + '&units=metric&APPID=624b9990964f6e8bc6fb390a87172ce3')
-       : axios.get('http://api.openweathermap.org/data/2.5/weather?q=' + data.city.toLowerCase() + '&units=metric&APPID=624b9990964f6e8bc6fb390a87172ce3'),
+       : axios.get('http://api.openweathermap.org/data/2.5/weather?q=' + data.name + '&units=metric&APPID=624b9990964f6e8bc6fb390a87172ce3'),
       data.coord && data.coord.lat 
       ? axios.get('http://api.airvisual.com/v2/nearest_city?lat=' + data.coord.lat + '&lon='+ data.coord.lon + '&key=dd32c20f-28a1-409c-9023-52eac0fcde2d') 
       : axios.get('http://api.airvisual.com/v2/nearest_city?lat=&key=dd32c20f-28a1-409c-9023-52eac0fcde2d', {

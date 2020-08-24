@@ -62,6 +62,7 @@ router.get('/air-pak/:city/:lat/:lon', async function (req, res) {
 function getData(data) {
   return new Promise((resolve, reject) => {
     const payload = {
+      cityName: null,
       totalPollenCount: null,
       temperature: {},
       currentTemperature: null,
@@ -85,8 +86,8 @@ function getData(data) {
           'x-forwarded-for': data.ip
         }
       })
-    ]).
-      then(async (results) => {
+    ]).then(async (results) => {
+        payload.cityName = data.name;
         if (results && results.length > 0) {
           //pollen count
           const cityData = results[0]?.value?.data?.Islamabad;

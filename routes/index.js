@@ -97,7 +97,6 @@ function getData(data) {
           payload.airQuality = await results[2]?.value?.data;
           payload.aqius = payload.airQuality?.data?.current?.pollution?.aqius
         }
-        console.log(payload);
         return resolve(payload);
       })
   }).catch(err => {

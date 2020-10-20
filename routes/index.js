@@ -74,11 +74,7 @@ function getData(data) {
     //method returns a promise that resolves after all of the given promises have either fulfilled or rejected
     Promise.allSettled([
       axios.get('http://ec2-3-23-111-60.us-east-2.compute.amazonaws.com:5000/pollendetails/' + data.name),
-      data.id 
-       ? axios.get('http://api.openweathermap.org/data/2.5/weather?id=' + data.id + '&units=metric&APPID=624b9990964f6e8bc6fb390a87172ce3')
-       : data.coord && data.coord.lat 
-       ? axios.get('http://api.openweathermap.org/data/2.5/weather?lat=' + data.coord.lon + '&lon=' + data.coord.lon  + '&units=metric&APPID=624b9990964f6e8bc6fb390a87172ce3')
-       : axios.get('http://api.openweathermap.org/data/2.5/weather?q=' + data.name + '&units=metric&APPID=624b9990964f6e8bc6fb390a87172ce3'),
+      axios.get('http://api.openweathermap.org/data/2.5/weather?lat=' + data.coord.lat + '&lon=' + data.coord.lon  + '&units=metric&APPID=624b9990964f6e8bc6fb390a87172ce3'),
       data.coord && data.coord.lat 
       ? axios.get('http://api.airvisual.com/v2/nearest_city?lat=' + data.coord.lat + '&lon='+ data.coord.lon + '&key=dd32c20f-28a1-409c-9023-52eac0fcde2d') 
       : axios.get('http://api.airvisual.com/v2/nearest_city?lat=&key=dd32c20f-28a1-409c-9023-52eac0fcde2d', {
@@ -90,17 +86,18 @@ function getData(data) {
         payload.cityName = data.name;
         if (results && results.length > 0) {
           //pollen count
-          const cityData = results[0]?.value?.data?.Islamabad;
+          const cityData = await results[0]?.value?.data?.islamabad;
           payload.totalPollenCount = cityData && cityData.length > 0 ? cityData[cityData.length -1]['h-8'] : null;
           //weather
-          payload.temperature = results[1]?.value?.data?.main;
+          payload.temperature = await results[1]?.value?.data?.main;
           payload.currentTemperature = payload.temperature?.temp;
           payload.minTemperature = payload.temperature?.temp_min;
           payload.maxTemperature = payload.temperature?.temp_max;
           //airVisual aqius
-          payload.airQuality = results[2]?.value?.data;
+          payload.airQuality = await results[2]?.value?.data;
           payload.aqius = payload.airQuality?.data?.current?.pollution?.aqius
         }
+        console.log(payload);
         return resolve(payload);
       })
   }).catch(err => {
